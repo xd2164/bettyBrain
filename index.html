@@ -1,0 +1,1143 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BettyBrain — Synthetic Learner System</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --navy:#1a2f4e; --teal:#0096c7; --teal-light:#caf0f8;
+  --amber:#f4a261; --green:#52b788; --red:#e05757; --purple:#9b59b6;
+  --bg:#F7F6F2; --surface:#FFFFFF; --surface2:#F2F1ED;
+  --text:#1A1A18; --sub:#5A5A56; --muted:#9A9990;
+  --border:rgba(0,0,0,0.10); --border-strong:rgba(0,0,0,0.18);
+  --radius:8px;
+  --blue-p:#185FA5; --blue-bg:#E6F1FB;
+  --green-p:#0F6E56; --green-bg:#EAF3DE;
+  --amber-p:#854F0B; --amber-bg:#FAEEDA;
+  --red-p:#A32D2D; --red-bg:#FCEBEB;
+  --purple-p:#3C3489; --purple-bg:#EEEDFE;
+  --rose-p:#9D174D; --rose-bg:#FDF2F8;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;}
+
+/* ── HERO ───────────────────────────────────────────────── */
+.hero{background:linear-gradient(135deg,#1a2f4e 0%,#023e7d 50%,#0096c7 100%);color:white;padding:90px 48px 80px;text-align:center;position:relative;overflow:hidden;}
+.hero::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 60% 40%,rgba(144,224,239,0.12) 0%,transparent 70%);pointer-events:none;}
+.hero h1{font-size:clamp(2.6rem,6vw,4.5rem);font-weight:900;letter-spacing:-2px;line-height:1;margin-bottom:20px;position:relative;z-index:1;}
+.hero h1 span{color:#90e0ef;}
+.hero .tagline{font-size:clamp(1.1rem,2.5vw,1.4rem);opacity:0.85;max-width:680px;margin:0 auto 16px;position:relative;z-index:1;}
+.hero .sub{font-size:1rem;opacity:0.6;max-width:560px;margin:0 auto;position:relative;z-index:1;}
+.hero-pills{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:32px;position:relative;z-index:1;}
+.hero-pill{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 18px;border-radius:999px;font-size:0.85rem;font-weight:600;}
+
+/* ── SHARED ─────────────────────────────────────────────── */
+.wrap{max-width:1200px;margin:0 auto;padding:72px 40px;}
+.eyebrow{font-size:0.72rem;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:var(--teal);margin-bottom:8px;}
+.sec-title{font-size:clamp(1.8rem,3.5vw,2.4rem);font-weight:800;color:var(--navy);letter-spacing:-0.5px;margin-bottom:12px;}
+.sec-desc{font-size:1.05rem;color:var(--sub);max-width:700px;margin-bottom:48px;}
+hr.divider{border:none;border-top:1px solid var(--border);margin:0 40px;}
+
+/* ── ARCHITECTURE ───────────────────────────────────────── */
+.arch-wrap{background:var(--surface);border-radius:20px;padding:36px 40px;box-shadow:0 4px 32px rgba(0,0,0,0.08);}
+.pipeline-label{font-size:9.5px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:16px;}
+.flow-grid{display:flex;align-items:stretch;margin-bottom:18px;border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.flow-stage{flex:1;padding:16px 14px;border-right:1px solid var(--border);display:flex;flex-direction:column;}
+.flow-stage:last-child{border-right:none;}
+.fs-num{font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;}
+.fs-name{font-size:12.5px;font-weight:700;color:var(--navy);margin-bottom:10px;line-height:1.35;}
+.fs-items{flex:1;display:flex;flex-direction:column;gap:4px;}
+.fs-item{font-size:10.5px;color:var(--sub);line-height:1.45;padding:3px 0;border-bottom:0.5px dashed var(--border);}
+.fs-item:last-child{border-bottom:none;}
+.fs-out{font-size:10px;font-weight:600;margin-top:10px;padding-top:8px;border-top:1px solid var(--border);}
+.loop-note{background:#F5F0FD;border:1px solid rgba(155,89,182,0.2);border-radius:8px;padding:11px 16px;font-size:12px;color:#5B3B8C;line-height:1.6;margin-bottom:18px;display:flex;gap:10px;align-items:flex-start;}
+.loop-icon{font-size:18px;line-height:1;flex-shrink:0;margin-top:1px;}
+.calib-row{display:grid;grid-template-columns:auto 1fr 1fr 1fr;gap:20px;border-top:1px solid var(--border);padding-top:18px;align-items:start;}
+.calib-divider{width:1px;background:var(--border);align-self:stretch;}
+.calib-stat{text-align:center;padding:0 8px;}
+.calib-big{font-size:2rem;font-weight:800;color:var(--navy);line-height:1;margin-bottom:4px;}
+.calib-sub{font-size:10.5px;color:var(--muted);line-height:1.4;}
+
+/* ── USE CASES ──────────────────────────────────────────── */
+.uc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:22px;}
+.uc-card{background:var(--surface);border-radius:16px;padding:30px 28px;box-shadow:0 2px 16px rgba(0,0,0,0.06);border-top:5px solid var(--teal);transition:transform 0.2s,box-shadow 0.2s;cursor:default;}
+.uc-card:hover{transform:translateY(-4px);box-shadow:0 10px 40px rgba(0,0,0,0.12);}
+.uc-card:nth-child(2){border-top-color:var(--amber);}
+.uc-card:nth-child(3){border-top-color:var(--green);}
+.uc-card:nth-child(4){border-top-color:var(--purple);}
+.uc-card:nth-child(5){border-top-color:var(--red);}
+.uc-card:nth-child(6){border-top-color:#1abc9c;}
+.uc-icon{font-size:2.4rem;margin-bottom:14px;line-height:1;}
+.uc-card h3{font-size:1.1rem;font-weight:700;color:var(--navy);margin-bottom:8px;}
+.uc-card p{font-size:0.9rem;color:var(--sub);margin-bottom:16px;line-height:1.65;}
+.uc-q{list-style:none;padding:0;}
+.uc-q li{font-size:0.82rem;color:var(--muted);padding:5px 0;border-bottom:1px dashed var(--border);}
+.uc-q li::before{content:"→ ";color:var(--teal);font-weight:700;}
+.uc-q li:last-child{border-bottom:none;}
+.gps-tag{margin-top:16px;padding-top:12px;border-top:1px solid var(--border);font-size:0.78rem;font-style:italic;color:var(--teal);}
+
+/* ── EXPLORER SECTION ───────────────────────────────────── */
+.explorer-section{background:var(--bg);border-top:1px solid var(--border);}
+
+.etabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:24px;}
+.etab{padding:8px 18px;border-radius:var(--radius);border:0.5px solid var(--border-strong);background:transparent;color:var(--sub);font-size:13px;cursor:pointer;transition:all 0.15s;font-family:inherit;}
+.etab.active{background:var(--surface);border-color:var(--border-strong);color:var(--text);font-weight:500;}
+.etab:hover:not(.active){background:rgba(0,0,0,0.04);}
+.etab-panel{display:none;}
+.etab-panel.active{display:block;}
+
+/* Persona gallery */
+.pgallery{display:flex;gap:10px;margin-bottom:18px;}
+.pgal-card{background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;cursor:pointer;transition:all 0.15s;flex:1;display:flex;align-items:center;gap:12px;}
+.pgal-card.selected{border-color:var(--teal);background:#F0FDFA;}
+.pgal-card:hover:not(.selected){border-color:var(--border-strong);}
+.pav{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;flex-shrink:0;}
+.pgal-name{font-size:15px;font-weight:600;margin-bottom:3px;}
+.pgal-tag{font-size:11px;padding:2px 8px;border-radius:20px;display:inline-block;}
+.pgal-desc{display:none;}
+
+/* Detail panel */
+.detail-panel{background:var(--surface);border-radius:12px;border:0.5px solid var(--border);padding:1.5rem;}
+.detail-hdr{display:flex;align-items:center;gap:12px;margin-bottom:1rem;border-bottom:0.5px solid var(--border);padding-bottom:1rem;}
+.detail-title{font-size:16px;font-weight:500;}
+.detail-sub{font-size:13px;color:var(--sub);margin-top:2px;}
+.attrs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem;}
+@media(max-width:540px){.attrs{grid-template-columns:1fr;}}
+.attr-box{background:var(--surface2);border-radius:var(--radius);padding:10px 12px;border:0.5px solid var(--border);}
+.attr-label{font-size:10px;color:var(--muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.05em;}
+.attr-value{font-size:13px;line-height:1.4;}
+.scenario-label{font-size:12px;font-weight:500;color:var(--sub);margin-bottom:8px;margin-top:1rem;}
+.scen-block{border-left:3px solid;border-radius:0 var(--radius) var(--radius) 0;padding:10px 14px;margin-bottom:8px;background:var(--surface2);}
+.scen-block.txt{border-color:#378ADD;}
+.scen-block.sim{border-color:#1D9E75;}
+.scen-head{font-size:12px;font-weight:500;margin-bottom:4px;}
+.scen-block.txt .scen-head{color:var(--blue-p);}
+.scen-block.sim .scen-head{color:var(--green-p);}
+.scen-body{font-size:12px;color:var(--sub);line-height:1.5;}
+.outcome-row{display:flex;align-items:center;gap:10px;margin-top:8px;}
+.out-label{font-size:11px;color:var(--muted);min-width:100px;}
+.bar-bg{flex:1;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;}
+.bar-fill-anim{height:100%;border-radius:3px;width:0;transition:width 0.9s ease;}
+.out-val{font-size:11px;color:var(--sub);min-width:34px;text-align:right;}
+
+/* Comparison table */
+.cmp-wrap{overflow-x:auto;}
+.cmp-table{width:100%;border-collapse:collapse;font-size:13px;}
+.cmp-table th{text-align:left;padding:10px 14px;font-weight:500;font-size:11px;color:var(--muted);border-bottom:0.5px solid var(--border);text-transform:uppercase;letter-spacing:0.04em;background:var(--surface2);}
+.cmp-table th:first-child{border-radius:var(--radius) 0 0 0;}
+.cmp-table th:last-child{border-radius:0 var(--radius) 0 0;}
+.cmp-table td{padding:12px 14px;border-bottom:0.5px solid var(--border);color:var(--text);vertical-align:top;line-height:1.5;font-size:13px;}
+.cmp-table tr:last-child td{border-bottom:none;}
+.cmp-table tbody tr:nth-child(odd) td{background:var(--surface);}
+.cmp-table tbody tr:nth-child(even) td{background:var(--surface2);}
+.p-mini{display:flex;align-items:center;gap:8px;}
+.av-sm{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;}
+.badge-sm{display:inline-block;padding:2px 7px;border-radius:20px;font-size:11px;font-weight:500;margin:2px 2px 0 0;}
+.b-blue{background:var(--blue-bg);color:var(--blue-p);}
+.b-green{background:var(--green-bg);color:var(--green-p);}
+.b-amber{background:var(--amber-bg);color:var(--amber-p);}
+.b-red{background:var(--red-bg);color:var(--red-p);}
+.b-purple{background:var(--purple-bg);color:var(--purple-p);}
+
+/* Causal maps */
+.maps-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:18px;}
+.map-card{background:var(--surface);border-radius:12px;border:0.5px solid var(--border);padding:1.25rem;}
+.map-card-hdr{display:flex;align-items:center;gap:10px;margin-bottom:14px;border-bottom:0.5px solid var(--border);padding-bottom:12px;}
+.map-card-hdr .mtitle{font-size:14px;font-weight:500;}
+.map-card-hdr .msub{font-size:12px;color:var(--sub);}
+.map-note{font-size:11px;color:var(--muted);margin-top:8px;}
+
+/* Implications */
+.imp-list{margin-top:0.5rem;}
+.imp-item{display:flex;gap:12px;padding:12px 0;border-bottom:0.5px solid var(--border);font-size:13px;line-height:1.6;}
+.imp-item:last-child{border-bottom:none;}
+.imp-bullet{color:var(--muted);font-size:1rem;flex-shrink:0;margin-top:2px;}
+.callout{margin-top:1.5rem;background:var(--surface);border-radius:12px;border:0.5px solid var(--border);padding:1rem 1.25rem;}
+.callout-title{font-size:13px;font-weight:500;margin-bottom:6px;}
+.callout-body{font-size:13px;color:var(--sub);line-height:1.6;}
+
+/* ── ROADMAP ─────────────────────────────────────────────── */
+.roadmap-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px;}
+.road-card{background:var(--surface);border-radius:14px;padding:22px;box-shadow:0 2px 12px rgba(0,0,0,0.06);}
+.road-icon{font-size:1.4rem;margin-bottom:8px;}
+.road-card h4{color:var(--navy);margin-bottom:6px;font-size:1rem;}
+.road-card p{font-size:0.85rem;color:var(--sub);line-height:1.55;}
+
+/* ── IMPLICATIONS numbers ────────────────────────────────── */
+.impl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:18px;}
+.impl-card{background:var(--surface);border-radius:14px;padding:26px;box-shadow:0 2px 12px rgba(0,0,0,0.06);}
+.impl-num{font-size:3rem;font-weight:900;color:var(--border);line-height:1;margin-bottom:8px;}
+.impl-card h4{font-size:1rem;font-weight:700;color:var(--navy);margin-bottom:8px;}
+.impl-card p{font-size:0.88rem;color:var(--sub);line-height:1.6;}
+
+/* ── FOOTER ──────────────────────────────────────────────── */
+footer{background:var(--navy);color:rgba(255,255,255,0.5);text-align:center;padding:32px 24px;font-size:0.85rem;}
+footer a{color:#90e0ef;text-decoration:none;}
+footer strong{color:rgba(255,255,255,0.8);}
+
+/* ── FADE-IN ─────────────────────────────────────────────── */
+.fade-up{opacity:0;transform:translateY(20px);transition:opacity 0.5s ease,transform 0.5s ease;}
+.fade-up.visible{opacity:1;transform:translateY(0);}
+/* ── TRACE STEPS ─────────────────────────────────────────── */
+.trace-step{display:grid;grid-template-columns:16px 1fr 128px;gap:6px;align-items:baseline;padding:5px 0;border-bottom:0.5px dashed rgba(0,0,0,0.08);font-size:11px;line-height:1.5;}
+.trace-step:last-child{border-bottom:none;}
+.ts-n{font-size:9.5px;color:var(--muted);text-align:center;}
+.ts-txt{color:var(--sub);}
+.ts-trigger{font-style:normal;opacity:0.65;}
+.ts-map{font-size:10px;color:var(--muted);text-align:right;}
+.ts-skip .ts-txt{color:var(--red-p);font-weight:500;}
+.ts-add .ts-txt{color:var(--green-p);}
+.ts-stop .ts-txt{color:var(--amber-p);}
+/* ── MAP BEFORE STATE ────────────────────────────────────── */
+.map-before{background:var(--surface2);border-radius:6px;padding:8px 10px;margin-bottom:6px;border:0.5px solid var(--border);}
+.map-before-label,.map-after-label{font-size:9px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;display:block;}
+.map-after-label{margin-top:8px;}
+.mb-row{display:flex;align-items:baseline;gap:6px;margin-bottom:2px;font-size:11px;color:var(--sub);line-height:1.4;}
+/* ── IMPLICATION ATTRIBUTION ─────────────────────────────── */
+.imp-who{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px;}
+.imp-theme{font-size:9.5px;font-weight:800;letter-spacing:1.3px;text-transform:uppercase;color:var(--teal);margin-bottom:5px;display:block;}
+.imp-evidence{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px;align-items:center;}
+.imp-evidence-label{font-size:10px;color:var(--muted);}
+.imp-action-row{margin-top:6px;font-size:12px;line-height:1.55;color:var(--sub);}
+.imp-action-lbl{font-size:10px;font-weight:800;letter-spacing:0.8px;text-transform:uppercase;padding:1px 7px;border-radius:10px;margin-right:5px;display:inline-block;}
+.imp-action-lbl.do{background:#E6F1FB;color:#185FA5;}
+.imp-action-lbl.outcome{background:#EAF3DE;color:#3B6D11;}
+.imp-persona-tag{font-size:10px;padding:1px 7px;border-radius:10px;font-weight:600;}
+/* ── OUTCOME COMPARISON PANEL (persona gallery) ──────────── */
+.outcmp-panel{background:var(--surface2);border-radius:8px;padding:12px 14px;margin-top:14px;border:0.5px solid var(--border);}
+.outcmp-title{font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+.outcmp-metric{margin-bottom:10px;}
+.outcmp-metric:last-child{margin-bottom:0;}
+.outcmp-mlabel{font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px;}
+.outcmp-row{display:grid;grid-template-columns:36px 1fr 38px;gap:6px;align-items:center;margin-bottom:3px;}
+.outcmp-ver{font-size:9.5px;font-weight:700;text-align:right;white-space:nowrap;}
+.outcmp-ver.txt{color:#378ADD;}
+.outcmp-ver.sim{color:#1D9E75;}
+.outcmp-pct{font-size:11px;font-weight:600;color:var(--sub);text-align:right;}
+.outcmp-delta{font-size:10px;color:var(--muted);margin-top:4px;padding-top:4px;border-top:0.5px dashed rgba(0,0,0,0.08);}
+/* ── MAP COMPARE (other version summary in map cards) ─────── */
+.map-compare{background:var(--surface2);border-radius:6px;padding:8px 10px;margin-top:8px;border:0.5px solid var(--border);}
+.map-compare-ver{font-size:9px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:4px;display:block;}
+.map-compare-ver.alt-txt{color:#378ADD;}
+.map-compare-ver.alt-sim{color:#1D9E75;}
+.mc-row{font-size:11px;color:var(--sub);margin-bottom:2px;line-height:1.4;}
+.mc-score{font-size:10px;color:var(--muted);margin-top:4px;font-style:italic;border-top:0.5px dashed rgba(0,0,0,0.08);padding-top:4px;}
+/* ── PERSONA ORIGIN BADGES ───────────────────────────────── */
+.origin-badge{font-size:9px;padding:2px 7px;border-radius:8px;font-weight:700;letter-spacing:0.4px;text-transform:uppercase;display:inline-block;margin-top:7px;}
+.origin-slide{background:#FEF3C7;color:#92400E;}
+.origin-synth{background:#E6F1FB;color:#185FA5;}
+.framing-note{background:#FFFBEB;border:0.5px solid rgba(180,130,0,0.25);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#92400E;line-height:1.6;}
+/* ── METHODOLOGY BOX ─────────────────────────────────────── */
+.method-box{background:var(--surface);border-radius:12px;border:0.5px solid var(--border);padding:1.25rem 1.5rem;margin-bottom:22px;box-shadow:0 2px 10px rgba(0,0,0,0.05);}
+.method-box-title{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:14px;padding-bottom:10px;border-bottom:0.5px solid var(--border);letter-spacing:-0.1px;}
+.method-versions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+@media(max-width:600px){.method-versions{grid-template-columns:1fr;}}
+.method-ver{border-radius:8px;padding:10px 12px;border:0.5px solid var(--border);}
+.method-ver.txt-ver{border-left:3px solid #378ADD;background:#F5F9FF;}
+.method-ver.sim-ver{border-left:3px solid #1D9E75;background:#F3FBF7;}
+.method-ver-label{font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:5px;}
+.method-ver.txt-ver .method-ver-label{color:#378ADD;}
+.method-ver.sim-ver .method-ver-label{color:#1D9E75;}
+.method-ver-body{font-size:11.5px;color:var(--sub);line-height:1.55;}
+.method-steps{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
+.method-step{display:flex;gap:10px;align-items:flex-start;}
+.ms-num{width:20px;height:20px;border-radius:50%;background:var(--teal);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.ms-head{font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px;}
+.ms-body{font-size:11.5px;color:var(--sub);line-height:1.5;}
+.method-why{background:var(--blue-bg);border-radius:8px;padding:10px 12px;border:0.5px solid rgba(24,95,165,0.15);}
+.method-why-title{font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--blue-p);margin-bottom:4px;}
+.method-why-body{font-size:11.5px;color:var(--blue-p);line-height:1.55;opacity:0.9;}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════ HERO ═══════════════════════════════ -->
+<div class="hero">
+  <h1>Betty<span>Brain</span></h1>
+  <p class="tagline">Can we test whether instruction will work — before it reaches classrooms?</p>
+  <p class="sub">A synthetic learner simulates how different student types engage with instructional materials and builds a causal knowledge map. Run dozens of design iterations in minutes, not months — with no human subjects required.</p>
+  <div class="hero-pills">
+    <span class="hero-pill">Test before deployment</span>
+    <span class="hero-pill">No human subjects required</span>
+    <span class="hero-pill">Any student profile · any design</span>
+    <span class="hero-pill">Minutes not months</span>
+    <span class="hero-pill">Calibrated against real student data</span>
+  </div>
+</div>
+
+<!-- ═══════════════════ THE BET ═══════════════════════════ -->
+<div class="wrap fade-up" style="padding-bottom:0;">
+  <div style="background:var(--navy);border-radius:16px;padding:32px 36px;color:white;display:grid;grid-template-columns:1fr 1fr;gap:36px;align-items:start;">
+    <div>
+      <div style="font-size:9.5px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#90e0ef;margin-bottom:10px;">The Hypothesis</div>
+      <div style="font-size:1.25rem;font-weight:700;line-height:1.45;margin-bottom:14px;">An LLM-driven synthetic learner can predict which instructional designs will fail — and for which student types — before a single student enrolls.</div>
+      <div style="font-size:0.9rem;opacity:0.75;line-height:1.65;">The system is calibrated against real Betty's Brain study data. Synthetic agent predictions correlate with human student outcomes at <strong style="color:#90e0ef;">r ≈ .6</strong> — strong enough to surface design flaws before deployment, not after.</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div style="font-size:9.5px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#90e0ef;margin-bottom:2px;">If true, this changes</div>
+      <div style="background:rgba(255,255,255,0.07);border-radius:10px;padding:14px 16px;">
+        <div style="font-size:12px;font-weight:700;color:#caf0f8;margin-bottom:4px;">Curriculum development cycle</div>
+        <div style="font-size:12px;opacity:0.75;line-height:1.55;">From: recruit → IRB → 6–8 week study → one design tested<br>To: define persona → run agent → 10 minutes → any design, any time</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.07);border-radius:10px;padding:14px 16px;">
+        <div style="font-size:12px;font-weight:700;color:#caf0f8;margin-bottom:4px;">What "tested" means for grantees</div>
+        <div style="font-size:12px;opacity:0.75;line-height:1.55;">Not "piloted with a convenience sample" — but stress-tested against diverse learner profiles, with structural gap analysis, before investment is committed at scale.</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.07);border-radius:10px;padding:14px 16px;">
+        <div style="font-size:12px;font-weight:700;color:#caf0f8;margin-bottom:4px;">Validation milestone</div>
+        <div style="font-size:12px;opacity:0.75;line-height:1.55;">Calibrate synthetic predictions against existing Betty's Brain human study datasets. If r ≥ .6 holds, the system is ready to inform real curriculum investment decisions.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ ARCHITECTURE ═══════════════════════ -->
+<div class="wrap fade-up">
+  <p class="eyebrow">System Overview</p>
+  <h2 class="sec-title">How the Synthetic Learner Works</h2>
+  <p class="sec-desc">From a student profile to a structured learning diagnostic — five stages, one iterative content-processing loop, scored against real student data.</p>
+
+  <!-- View toggle -->
+  <div style="display:flex;gap:6px;margin-bottom:16px;">
+    <button id="arch-btn-overview" onclick="showArch('overview')" style="padding:6px 16px;border-radius:6px;border:1.5px solid var(--teal);background:var(--teal);color:white;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">Overview diagram</button>
+    <button id="arch-btn-steps" onclick="showArch('steps')" style="padding:6px 16px;border-radius:6px;border:1.5px solid var(--border-strong);background:transparent;color:var(--sub);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">Step-by-step flow</button>
+  </div>
+
+  <div class="arch-wrap">
+
+  <!-- ── VIEW A: OVERVIEW SVG ── -->
+  <div id="arch-overview">
+    <svg viewBox="0 0 980 300" width="100%" xmlns="http://www.w3.org/2000/svg" style="display:block;">
+      <defs>
+        <marker id="arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#94a3b8"/></marker>
+        <marker id="arr-p" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#9b59b6"/></marker>
+        <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.09"/></filter>
+      </defs>
+      <!-- Instructional Content -->
+      <rect x="10" y="20" width="155" height="75" rx="12" fill="#52b788" filter="url(#sh)"/>
+      <text x="87" y="50" text-anchor="middle" fill="white" font-family="sans-serif" font-size="13" font-weight="700">Instructional Content</text>
+      <text x="87" y="68" text-anchor="middle" fill="#d8f3dc" font-family="sans-serif" font-size="10.5">Text · Simulation · Media</text>
+      <!-- Persona -->
+      <rect x="10" y="120" width="155" height="75" rx="12" fill="#1a2f4e" filter="url(#sh)"/>
+      <text x="87" y="150" text-anchor="middle" fill="white" font-family="sans-serif" font-size="13" font-weight="700">Persona</text>
+      <text x="87" y="167" text-anchor="middle" fill="#90e0ef" font-family="sans-serif" font-size="10.5">Traits · Prior Beliefs</text>
+      <text x="87" y="182" text-anchor="middle" fill="#90e0ef" font-family="sans-serif" font-size="10.5">Goals · Learning Style</text>
+      <!-- LLM -->
+      <rect x="10" y="220" width="155" height="62" rx="12" fill="#9b59b6" filter="url(#sh)"/>
+      <text x="87" y="252" text-anchor="middle" fill="white" font-family="sans-serif" font-size="13" font-weight="700">LLM</text>
+      <text x="87" y="270" text-anchor="middle" fill="#e8d5f7" font-family="sans-serif" font-size="10.5">Interprets · Parses · Translates</text>
+      <!-- Arrows to Agent Driver -->
+      <line x1="165" y1="57" x2="278" y2="125" stroke="#94a3b8" stroke-width="1.8" marker-end="url(#arr)"/>
+      <line x1="165" y1="157" x2="278" y2="157" stroke="#94a3b8" stroke-width="1.8" marker-end="url(#arr)"/>
+      <line x1="165" y1="251" x2="278" y2="195" stroke="#9b59b6" stroke-width="1.8" stroke-dasharray="5,3" marker-end="url(#arr-p)"/>
+      <!-- Agent Driver -->
+      <rect x="278" y="95" width="200" height="130" rx="14" fill="#0096c7" filter="url(#sh)"/>
+      <text x="378" y="128" text-anchor="middle" fill="white" font-family="sans-serif" font-size="14" font-weight="800">Agent Driver</text>
+      <line x1="298" y1="138" x2="458" y2="138" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>
+      <text x="378" y="155" text-anchor="middle" fill="#caf0f8" font-family="sans-serif" font-size="11">Reads text</text>
+      <text x="378" y="171" text-anchor="middle" fill="#caf0f8" font-family="sans-serif" font-size="11">Manipulates simulation</text>
+      <text x="378" y="187" text-anchor="middle" fill="#caf0f8" font-family="sans-serif" font-size="11">Queries causal map</text>
+      <text x="378" y="203" text-anchor="middle" fill="#caf0f8" font-family="sans-serif" font-size="11">Uses quiz to self-check</text>
+      <!-- Arrow to Causal Map -->
+      <line x1="478" y1="160" x2="565" y2="160" stroke="#94a3b8" stroke-width="1.8" marker-end="url(#arr)"/>
+      <!-- Causal Map -->
+      <rect x="565" y="95" width="195" height="130" rx="14" fill="#f4a261" filter="url(#sh)"/>
+      <text x="662" y="128" text-anchor="middle" fill="white" font-family="sans-serif" font-size="14" font-weight="800">Causal Map</text>
+      <text x="662" y="143" text-anchor="middle" fill="white" font-family="sans-serif" font-size="10">"Betty's Brain"</text>
+      <line x1="582" y1="150" x2="743" y2="150" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>
+      <text x="662" y="168" text-anchor="middle" fill="#fff3e0" font-family="sans-serif" font-size="11">Nodes (concepts)</text>
+      <text x="662" y="184" text-anchor="middle" fill="#fff3e0" font-family="sans-serif" font-size="11">Directed signed links</text>
+      <text x="662" y="200" text-anchor="middle" fill="#fff3e0" font-family="sans-serif" font-size="11">Mechanism labels</text>
+      <text x="662" y="216" text-anchor="middle" fill="#fff3e0" font-family="sans-serif" font-size="11">Confidence weights</text>
+      <!-- Arrow to Monitor -->
+      <line x1="760" y1="160" x2="840" y2="160" stroke="#94a3b8" stroke-width="1.8" marker-end="url(#arr)"/>
+      <!-- Learning Monitor -->
+      <rect x="840" y="95" width="130" height="130" rx="14" fill="#e05757" filter="url(#sh)"/>
+      <text x="905" y="128" text-anchor="middle" fill="white" font-family="sans-serif" font-size="13" font-weight="800">Learning</text>
+      <text x="905" y="144" text-anchor="middle" fill="white" font-family="sans-serif" font-size="13" font-weight="800">Monitor</text>
+      <line x1="857" y1="153" x2="953" y2="153" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>
+      <text x="905" y="170" text-anchor="middle" fill="#ffe0e0" font-family="sans-serif" font-size="10.5">Map accuracy</text>
+      <text x="905" y="186" text-anchor="middle" fill="#ffe0e0" font-family="sans-serif" font-size="10.5">Behavior trace</text>
+      <text x="905" y="202" text-anchor="middle" fill="#ffe0e0" font-family="sans-serif" font-size="10.5">Quiz performance</text>
+      <text x="905" y="218" text-anchor="middle" fill="#ffe0e0" font-family="sans-serif" font-size="10.5">Outcomes</text>
+    </svg>
+    <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:24px;padding-top:20px;border-top:1px solid var(--border);">
+      <div style="display:flex;align-items:center;gap:7px;font-size:0.8rem;color:var(--sub);"><span style="display:inline-block;width:13px;height:13px;border-radius:3px;background:#52b788;"></span>Content inputs</div>
+      <div style="display:flex;align-items:center;gap:7px;font-size:0.8rem;color:var(--sub);"><span style="display:inline-block;width:13px;height:13px;border-radius:3px;background:#1a2f4e;"></span>Persona</div>
+      <div style="display:flex;align-items:center;gap:7px;font-size:0.8rem;color:var(--sub);"><span style="display:inline-block;width:13px;height:13px;border-radius:3px;background:#9b59b6;"></span>LLM (dashed = interpretation)</div>
+      <div style="display:flex;align-items:center;gap:7px;font-size:0.8rem;color:var(--sub);"><span style="display:inline-block;width:13px;height:13px;border-radius:3px;background:#0096c7;"></span>Agent driver</div>
+      <div style="display:flex;align-items:center;gap:7px;font-size:0.8rem;color:var(--sub);"><span style="display:inline-block;width:13px;height:13px;border-radius:3px;background:#f4a261;"></span>Knowledge state</div>
+      <div style="display:flex;align-items:center;gap:7px;font-size:0.8rem;color:var(--sub);"><span style="display:inline-block;width:13px;height:13px;border-radius:3px;background:#e05757;"></span>Evaluation</div>
+    </div>
+  </div><!-- /arch-overview -->
+
+  <!-- ── VIEW B: STEP-BY-STEP PIPELINE ── -->
+  <div id="arch-steps" style="display:none;">
+    <div class="pipeline-label">One learner × one instruction run — step by step</div>
+
+    <div class="flow-grid">
+      <div class="flow-stage" style="background:#F7FAFE;border-top:3px solid #1a2f4e;">
+        <div class="fs-num" style="color:#1a2f4e;">Step 1 &nbsp;·&nbsp; Define Persona</div>
+        <div class="fs-name">Encode who the learner is</div>
+        <div class="fs-items">
+          <div class="fs-item">Prior knowledge and misconceptions → belief weights on specific concepts</div>
+          <div class="fs-item">Learning strategy (scan, deep read, experiment) → behavior probabilities per content type</div>
+          <div class="fs-item">Goal orientation and ego-protection → persistence thresholds and skip triggers</div>
+          <div class="fs-item">Values filter → domain-specific acceptance/rejection rules</div>
+        </div>
+        <div class="fs-out" style="color:#1a2f4e;">Output: structured persona profile</div>
+      </div>
+      <div class="flow-stage" style="background:#F3FBF7;border-top:3px solid #52b788;">
+        <div class="fs-num" style="color:#1D9E75;">Step 2 &nbsp;·&nbsp; Queue Instruction</div>
+        <div class="fs-name">Break content into processable chunks</div>
+        <div class="fs-items">
+          <div class="fs-item">Text chapter → sentences grouped into semantic chunks (topic shifts, paragraph breaks)</div>
+          <div class="fs-item">Simulation → discrete slider interactions as separate observation events</div>
+          <div class="fs-item">Each chunk processed once, in order — no skipping ahead, no backtracking</div>
+        </div>
+        <div class="fs-out" style="color:#1D9E75;">Output: ordered content queue</div>
+      </div>
+      <div class="flow-stage" style="background:#F9F5FD;border-top:3px solid #9b59b6;">
+        <div class="fs-num" style="color:#7B3FAE;">Step 3 &nbsp;·&nbsp; LLM Decision <span style="font-weight:400;text-transform:none;letter-spacing:0;">(↻ repeats per chunk)</span></div>
+        <div class="fs-name">Persona + content → per-chunk action</div>
+        <div class="fs-items">
+          <div class="fs-item"><strong>Input:</strong> [persona context] + [current chunk]</div>
+          <div class="fs-item"><strong>Outputs:</strong> attend or skip &nbsp;·&nbsp; concepts to extract &nbsp;·&nbsp; mechanism label to apply &nbsp;·&nbsp; confidence weight</div>
+          <div class="fs-item">Same chunk, different persona → different decision. Bob skips mechanism text; Alfredo reads but filters human causation; Sally adds isolated nodes with no links.</div>
+          <div class="fs-item">Every decision logged to behavioral trace — attend, skip, filter, stop</div>
+        </div>
+        <div class="fs-out" style="color:#7B3FAE;">Output: per-chunk action + trace entry</div>
+      </div>
+      <div class="flow-stage" style="background:#FFFBF5;border-top:3px solid #f4a261;">
+        <div class="fs-num" style="color:#854F0B;">Step 4 &nbsp;·&nbsp; Update Causal Map</div>
+        <div class="fs-name">Build the knowledge state incrementally</div>
+        <div class="fs-items">
+          <div class="fs-item">Attended chunks → nodes (concepts) and directed links added to graph</div>
+          <div class="fs-item">Each link labeled: mechanism ("absorbs infrared"), sign (positive/negative), confidence weight</div>
+          <div class="fs-item">Skipped or filtered chunks → map unchanged; gaps are as informative as the content added</div>
+          <div class="fs-item">Map can be queried mid-run ("does my current map support this claim?")</div>
+        </div>
+        <div class="fs-out" style="color:#854F0B;">Output: incrementally built causal graph</div>
+      </div>
+      <div class="flow-stage" style="background:#FEF5F5;border-top:3px solid #e05757;">
+        <div class="fs-num" style="color:#A32D2D;">Step 5 &nbsp;·&nbsp; Learning Monitor</div>
+        <div class="fs-name">Score the map against expert ground truth</div>
+        <div class="fs-items">
+          <div class="fs-item">Node recall: what % of expert concepts did the agent capture?</div>
+          <div class="fs-item">Link accuracy: are directions and signs correct?</div>
+          <div class="fs-item">Chain depth: are multi-step causal paths complete or broken?</div>
+          <div class="fs-item">Mechanism labels: are links named with mechanism words, or left blank?</div>
+          <div class="fs-item">Misconception persistence: do wrong links survive the full run?</div>
+        </div>
+        <div class="fs-out" style="color:#A32D2D;">Output: structured design diagnostic</div>
+      </div>
+    </div>
+
+    <div class="loop-note">
+      <span class="loop-icon">↻</span>
+      <span><strong>The core loop:</strong> Steps 2 → 3 → 4 repeat for every content chunk in sequence. A 30-paragraph chapter = 30 decision loops. A 10-slider simulation = 10 observation loops. The behavioral trace (every attend / skip / filter decision) is what you see in the Learner Profiles tab below.</span>
+    </div>
+
+    <div class="calib-row">
+      <div>
+        <div style="font-size:9.5px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Calibration evidence</div>
+        <div style="font-size:12px;color:var(--sub);line-height:1.6;">Learning Monitor scores have been compared against real student outcomes from Betty's Brain human studies. The correlations below determine whether the system's diagnostics can be trusted to inform curriculum investment decisions.</div>
+      </div>
+      <div class="calib-stat">
+        <div class="calib-big">r ≈ .6</div>
+        <div class="calib-sub">Agent-to-student outcome correlation<br>Strong enough to surface design flaws</div>
+      </div>
+      <div class="calib-stat">
+        <div class="calib-big">6</div>
+        <div class="calib-sub">Runs completed in minutes<br>(3 personas × 2 instruction versions)</div>
+      </div>
+      <div class="calib-stat">
+        <div class="calib-big">5</div>
+        <div class="calib-sub">Diagnostic metrics per run<br>vs. 1–2 for a standard quiz</div>
+      </div>
+    </div>
+  </div><!-- /arch-steps -->
+
+  </div><!-- /arch-wrap -->
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════ USE CASES ═══════════════════════════ -->
+<div class="wrap fade-up">
+  <p class="eyebrow">Applications</p>
+  <h2 class="sec-title">Six Use Cases</h2>
+  <p class="sec-desc">The synthetic learner is a GPS for instruction — not one fixed route, but a tool that answers different navigation questions depending on who asks.</p>
+  <div class="uc-grid">
+    <div class="uc-card">
+      <div class="uc-icon">🔬</div>
+      <h3>Evaluate Instructional Materials</h3>
+      <p>Run multiple synthetic students through competing versions of content and compare causal map outcomes. Find which version works best — and for whom.</p>
+      <ul class="uc-q">
+        <li>Which version produces the most complete causal map?</li>
+        <li>Which leaves the most misconceptions intact?</li>
+        <li>Does one version favour a specific student type?</li>
+      </ul>
+      <p class="gps-tag">GPS: "Which route gets the most drivers to the destination?"</p>
+    </div>
+    <div class="uc-card">
+      <div class="uc-icon">🧑‍🏫</div>
+      <h3>Teacher Professional Development</h3>
+      <p>Show teachers a gallery of behavioral traces. Teachers practice recognising student patterns and learn which instructional moves help which learner types.</p>
+      <ul class="uc-q">
+        <li>What does a "confident-but-wrong" reader look like?</li>
+        <li>How do you catch Alfredo's worldview conflict early?</li>
+        <li>Which formative checks work for disengaged profiles?</li>
+      </ul>
+      <p class="gps-tag">GPS: "Teaching the driver to read road signs."</p>
+    </div>
+    <div class="uc-card">
+      <div class="uc-icon">🗺️</div>
+      <h3>Curriculum Gap Analysis</h3>
+      <p>Identify which causal links are consistently missing across all personas. Those gaps expose weaknesses in the instructional design — not the students.</p>
+      <ul class="uc-q">
+        <li>Which concepts are never acquired regardless of persona?</li>
+        <li>Which links require explicit scaffolding to form?</li>
+        <li>Are multi-step chains supported or must students infer them?</li>
+      </ul>
+      <p class="gps-tag">GPS: "Finding the roads missing from the map."</p>
+    </div>
+    <div class="uc-card">
+      <div class="uc-icon">🎯</div>
+      <h3>Differentiated Instruction Design</h3>
+      <p>Identify which approach works best for which persona. Design adaptive pathways and set up targeted scaffolding before students encounter the material.</p>
+      <ul class="uc-q">
+        <li>Should hands-on learners always start with simulation?</li>
+        <li>Do ego-protective learners need low-stakes quiz framing?</li>
+        <li>How much does prior misconception slow learning?</li>
+      </ul>
+      <p class="gps-tag">GPS: "Different routes for different vehicles."</p>
+    </div>
+    <div class="uc-card">
+      <div class="uc-icon">⚡</div>
+      <h3>Pre-Deployment Stress Testing</h3>
+      <p>Test new educational software before human pilots. Get signal fast, revise early, and sharpen human-study hypotheses at a fraction of the cost.</p>
+      <ul class="uc-q">
+        <li>Does this simulation break for low-persistence learners?</li>
+        <li>Is the reading level accessible for a reluctant reader?</li>
+        <li>Are quiz questions ambiguous from a misconception lens?</li>
+      </ul>
+      <p class="gps-tag">GPS: "Test drive the route before the road trip."</p>
+    </div>
+    <div class="uc-card">
+      <div class="uc-icon">💡</div>
+      <h3>Research Hypothesis Generation</h3>
+      <p>Generate predictions about human learning outcomes from persona × instruction combinations. Use these to design tighter human studies.</p>
+      <ul class="uc-q">
+        <li>What effect sizes would self-explanation prompts add?</li>
+        <li>Which student types benefit most from a gameshow format?</li>
+        <li>Would front-of-class display motivate or threaten Priya?</li>
+      </ul>
+      <p class="gps-tag">GPS: "Planning where to explore next."</p>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════ TECHNICAL INNOVATION ════════════════ -->
+<div class="wrap fade-up">
+  <p class="eyebrow">Technical Innovation</p>
+  <h2 class="sec-title">AI Infrastructure — Not a One-Size-Fits-All Product</h2>
+  <p class="sec-desc">Most ed-tech tools produce a single evaluated curriculum. This system produces infrastructure that gets smarter with every use — a dynamic research repository, not a fixed deliverable.</p>
+
+  <!-- Contrast row -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border-radius:14px;overflow:hidden;border:1px solid var(--border);margin-bottom:36px;">
+    <div style="padding:24px 28px;background:#F5F5F3;">
+      <div style="font-size:9.5px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">Traditional approach</div>
+      <div style="display:flex;flex-direction:column;gap:9px;">
+        <div style="font-size:13px;color:var(--sub);display:flex;gap:8px;align-items:baseline;"><span style="color:#E24B4A;font-weight:700;flex-shrink:0;">✗</span> One curriculum evaluated per study</div>
+        <div style="font-size:13px;color:var(--sub);display:flex;gap:8px;align-items:baseline;"><span style="color:#E24B4A;font-weight:700;flex-shrink:0;">✗</span> Results are static — don't improve with new data</div>
+        <div style="font-size:13px;color:var(--sub);display:flex;gap:8px;align-items:baseline;"><span style="color:#E24B4A;font-weight:700;flex-shrink:0;">✗</span> High cost per new design iteration (weeks, IRB, payment)</div>
+        <div style="font-size:13px;color:var(--sub);display:flex;gap:8px;align-items:baseline;"><span style="color:#E24B4A;font-weight:700;flex-shrink:0;">✗</span> Domain-locked — new domain = start from scratch</div>
+        <div style="font-size:13px;color:var(--sub);display:flex;gap:8px;align-items:baseline;"><span style="color:#E24B4A;font-weight:700;flex-shrink:0;">✗</span> Learner profiles are assumptions, not versioned assets</div>
+      </div>
+    </div>
+    <div style="padding:24px 28px;background:var(--navy);">
+      <div style="font-size:9.5px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#90e0ef;margin-bottom:12px;">AI Infrastructure</div>
+      <div style="display:flex;flex-direction:column;gap:9px;">
+        <div style="font-size:13px;color:#caf0f8;display:flex;gap:8px;align-items:baseline;"><span style="color:#52b788;font-weight:700;flex-shrink:0;">✓</span> Any curriculum evaluated, any time — same infrastructure</div>
+        <div style="font-size:13px;color:#caf0f8;display:flex;gap:8px;align-items:baseline;"><span style="color:#52b788;font-weight:700;flex-shrink:0;">✓</span> Predictions improve as calibration data accumulates</div>
+        <div style="font-size:13px;color:#caf0f8;display:flex;gap:8px;align-items:baseline;"><span style="color:#52b788;font-weight:700;flex-shrink:0;">✓</span> Minutes per iteration — design, re-run, compare</div>
+        <div style="font-size:13px;color:#caf0f8;display:flex;gap:8px;align-items:baseline;"><span style="color:#52b788;font-weight:700;flex-shrink:0;">✓</span> Domain-agnostic — swap the expert map, keep everything else</div>
+        <div style="font-size:13px;color:#caf0f8;display:flex;gap:8px;align-items:baseline;"><span style="color:#52b788;font-weight:700;flex-shrink:0;">✓</span> Persona library grows as a versioned, reusable research asset</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Innovation cards -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px;">
+
+    <div style="background:var(--surface);border-radius:14px;padding:24px 22px;border:1px solid var(--border);border-top:3px solid var(--navy);">
+      <div style="font-size:1.4rem;margin-bottom:10px;">🧬</div>
+      <h3 style="font-size:14px;font-weight:700;color:var(--navy);margin-bottom:6px;">Persona-as-Code</h3>
+      <p style="font-size:12.5px;color:var(--sub);line-height:1.65;margin-bottom:10px;">Learner profiles are structured, versioned parameters — not fixed character sketches. Each persona encodes prior knowledge, misconception weights, behavior probabilities, and goal orientation as machine-readable parameters.</p>
+      <div style="font-size:11.5px;color:var(--teal);font-weight:600;line-height:1.5;">Research value: Personas calibrated against real cohort data become a growing library of learner models — usable across any future curriculum evaluation.</div>
+    </div>
+
+    <div style="background:var(--surface);border-radius:14px;padding:24px 22px;border:1px solid var(--border);border-top:3px solid var(--teal);">
+      <div style="font-size:1.4rem;margin-bottom:10px;">🗺️</div>
+      <h3 style="font-size:14px;font-weight:700;color:var(--navy);margin-bottom:6px;">Causal Map as Universal Knowledge Currency</h3>
+      <p style="font-size:12.5px;color:var(--sub);line-height:1.65;margin-bottom:10px;">The causal graph is domain-agnostic and machine-readable. Any subject with a causal structure — health behavior, agricultural practice, civic knowledge, financial literacy — can be evaluated with the same infrastructure. Change the domain: update the expert map. Everything else stays the same.</p>
+      <div style="font-size:11.5px;color:var(--teal);font-weight:600;line-height:1.5;">Infrastructure value: One system architecture → multiple program areas.</div>
+    </div>
+
+    <div style="background:var(--surface);border-radius:14px;padding:24px 22px;border:1px solid var(--border);border-top:3px solid #9b59b6;">
+      <div style="font-size:1.4rem;margin-bottom:10px;">↻</div>
+      <h3 style="font-size:14px;font-weight:700;color:var(--navy);margin-bottom:6px;">Compounding Calibration</h3>
+      <p style="font-size:12.5px;color:var(--sub);line-height:1.65;margin-bottom:10px;">Every human study that validates a synthetic prediction adds to the calibration dataset. The system's accuracy compounds with use — unlike a static curriculum product that depreciates as student contexts change. The current r ≈ .6 is a starting point, not a ceiling.</p>
+      <div style="font-size:11.5px;color:var(--teal);font-weight:600;line-height:1.5;">Investment logic: early commitment produces durable infrastructure, not a one-time deliverable.</div>
+    </div>
+
+    <div style="background:var(--surface);border-radius:14px;padding:24px 22px;border:1px solid var(--border);border-top:3px solid #52b788;">
+      <div style="font-size:1.4rem;margin-bottom:10px;">📂</div>
+      <h3 style="font-size:14px;font-weight:700;color:var(--navy);margin-bottom:6px;">Behavioral Trace as Research Byproduct</h3>
+      <p style="font-size:12.5px;color:var(--sub);line-height:1.65;margin-bottom:10px;">Every run produces a full behavioral trace — every attend, skip, filter, and stop decision for every content chunk. This is a research data asset, not a cost. Over time, trace data across personas and domains becomes a repository for studying how different learner types engage with different instruction types.</p>
+      <div style="font-size:11.5px;color:var(--teal);font-weight:600;line-height:1.5;">Longitudinal value: the data compounds across programs — each run adds to the corpus.</div>
+    </div>
+
+    <div style="background:var(--surface);border-radius:14px;padding:24px 22px;border:1px solid var(--border);border-top:3px solid #f4a261;">
+      <div style="font-size:1.4rem;margin-bottom:10px;">🔩</div>
+      <h3 style="font-size:14px;font-weight:700;color:var(--navy);margin-bottom:6px;">Full Modularity — Swap Any Component</h3>
+      <p style="font-size:12.5px;color:var(--sub);line-height:1.65;margin-bottom:10px;">Instruction, persona, and evaluation are independent modules. Change the instruction: the same personas re-evaluate it automatically. Add a new persona: the same instruction is tested against a new learner type. Upgrade the LLM: everything downstream improves. No component is locked to another.</p>
+      <div style="font-size:11.5px;color:var(--teal);font-weight:600;line-height:1.5;">Operational value: grantees can extend the system without rebuilding it.</div>
+    </div>
+
+    <div style="background:var(--navy);border-radius:14px;padding:24px 22px;border:1px solid var(--border);">
+      <div style="font-size:1.4rem;margin-bottom:10px;">📈</div>
+      <h3 style="font-size:14px;font-weight:700;color:white;margin-bottom:6px;">The Repository Grows — It Doesn't Depreciate</h3>
+      <p style="font-size:12.5px;color:#caf0f8;line-height:1.65;margin-bottom:10px;">A curriculum product is finished when it ships. This system is in its earliest state when it ships. Each grantee program that runs evaluations adds calibration data, new personas, and new domain expert maps — making every subsequent evaluation more accurate.</p>
+      <div style="font-size:11.5px;color:#90e0ef;font-weight:600;line-height:1.5;">Portfolio value: the Gates education portfolio collectively benefits from each program's use.</div>
+    </div>
+
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════ EXPLORER ════════════════════════════ -->
+<div class="explorer-section">
+<div class="wrap fade-up">
+  <p class="eyebrow">Interactive Explorer</p>
+  <h2 class="sec-title">Explore the Synthetic Learners</h2>
+  <p class="sec-desc">Three illustrative <em>hypothetical</em> profiles from the original concept slides: Bob, Sally, and Alfredo. Two instruction types. Click a persona to see their step-by-step agent trace and predicted causal map outcomes.</p>
+
+  <!-- ── METHODOLOGY EXPLAINER ─────────────────────────────── -->
+  <div class="method-box">
+    <div class="method-box-title">Experimental design — what happens in each run</div>
+
+    <div class="method-versions">
+      <div class="method-ver txt-ver">
+        <div class="method-ver-label">Text + quiz run</div>
+        <div class="method-ver-body">The agent reads a written textbook chapter on greenhouse gases. Paragraph by paragraph, it decides — shaped by the persona — which sentences to attend to, which to skip, and what causal triples to extract. It can also use a built-in quiz to test the map it is building. The output is a causal map built from language.</div>
+      </div>
+      <div class="method-ver sim-ver">
+        <div class="method-ver-label">Simulation run</div>
+        <div class="method-ver-body">The agent interacts with an interactive science simulation. It varies sliders (CO₂ level, methane, etc.), observes what changes, and adds causal links from what it sees. No text to parse — causation is inferred from observed co-variation between variables. The output is a causal map built from experimentation.</div>
+      </div>
+    </div>
+
+    <div class="method-steps">
+      <div class="method-step">
+        <div class="ms-num">1</div>
+        <div>
+          <div class="ms-head">Pair one persona with one instruction version</div>
+          <div class="ms-body">Each <em>run</em> is one combination: e.g. Bob × text chapter. Three personas × two versions = 6 runs total. Each run is independent — the agent starts with only the persona's prior beliefs, no shared memory across runs.</div>
+        </div>
+      </div>
+      <div class="method-step">
+        <div class="ms-num">2</div>
+        <div>
+          <div class="ms-head">The agent engages the content step by step</div>
+          <div class="ms-body">The persona parameters (reading speed, ego-protection, goal orientation, prior knowledge, persistence) are translated by the LLM into per-step probabilities: attend vs. skip, add a node vs. ignore, stop early vs. continue. The behavioral trace records every decision.</div>
+        </div>
+      </div>
+      <div class="method-step">
+        <div class="ms-num">3</div>
+        <div>
+          <div class="ms-head">Betty's Brain causal map is built incrementally</div>
+          <div class="ms-body">As the agent reads or experiments, it adds nodes (concepts) and directed links (causal relations) to a structured graph — the same causal map format used in real Betty's Brain studies with human students. Links can carry mechanism labels (e.g. "reflects infrared") and confidence weights.</div>
+        </div>
+      </div>
+      <div class="method-step">
+        <div class="ms-num">4</div>
+        <div>
+          <div class="ms-head">The Learning Monitor scores the result</div>
+          <div class="ms-body">The agent's map is compared to an expert ground-truth map. The monitor reports: % of expert nodes captured, link accuracy, mechanism label presence, misconceptions that persist. This is the same evaluation metric used in Betty's Brain human studies (agent-to-student correlation r ≈ .6).</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="method-why">
+      <div class="method-why-title">Why an agent rather than a human student?</div>
+      <div class="method-why-body">Running a real student through both instruction versions takes hours and requires IRB approval, scheduling, and payment. Running all 6 conditions with real students is a multi-week study — and that's for three personas. A synthetic agent runs each condition in minutes, produces a structured comparable output, and can be re-run immediately on a revised design.<br><br>For program teams investing in curriculum quality at scale, this shifts the question from <em>"did our pilot work?"</em> (answered after significant resource commitment) to <em>"which design will work, and for whom?"</em> (answered before resources are committed). The synthetic learner is a <strong>design diagnostic, not a replacement for human validation</strong> — it front-loads iteration so that human studies evaluate instruction that is already well-calibrated.</div>
+    </div>
+  </div>
+
+  <div class="etabs">
+    <button class="etab active" onclick="showETab('personas',this)">Learner Profiles &amp; Maps</button>
+    <button class="etab" onclick="showETab('runs',this)">Results &amp; Implications</button>
+  </div>
+
+  <!-- ── TAB 1: PERSONA GALLERY ─────────────────────────── -->
+  <div id="etab-personas" class="etab-panel active">
+    <div class="framing-note">These three profiles are <strong>stress tests for instruction design</strong> — each isolates a distinct failure mode. <strong>Bob</strong> tests whether your instruction works without reading. <strong>Sally</strong> tests whether it survives a vocabulary gap and a missing prerequisite. <strong>Alfredo</strong> tests whether it can reach a learner with a values-based prior that resists the core scientific claim. Profiles are hypothetical and drawn from the original concept slides — not real students.</div>
+    <div class="pgallery">
+      <div class="pgal-card selected" onclick="selectP('bob',this)">
+        <div class="pav" style="background:var(--green-bg);color:var(--green-p);">BO</div>
+        <div><div class="pgal-name">Bob</div><span class="pgal-tag" style="background:var(--green-bg);color:var(--green-p);">Diligent · non-reader</span></div>
+      </div>
+      <div class="pgal-card" onclick="selectP('sally',this)">
+        <div class="pav" style="background:var(--rose-bg);color:var(--rose-p);">SL</div>
+        <div><div class="pgal-name">Sally</div><span class="pgal-tag" style="background:var(--rose-bg);color:var(--rose-p);">Good reader · science-averse</span></div>
+      </div>
+      <div class="pgal-card" onclick="selectP('alfredo',this)">
+        <div class="pav" style="background:var(--purple-bg);color:var(--purple-p);">AF</div>
+        <div><div class="pgal-name">Alfredo</div><span class="pgal-tag" style="background:var(--purple-bg);color:var(--purple-p);">Values-filtered</span></div>
+      </div>
+    </div>
+    <div id="persona-detail" class="detail-panel"></div>
+
+    <hr style="border:none;border-top:1.5px solid var(--border);margin:1.75rem 0 1.25rem;">
+    <p class="eyebrow" style="margin-bottom:6px;">Causal Maps</p>
+    <p style="font-size:13px;color:var(--sub);margin-bottom:6px;line-height:1.6;">What each synthetic learner builds after instruction. Expert target chain: <strong>CO₂/Methane → absorbs infrared → less heat escapes → surface temperature rises → ice melts → albedo decreases → more warming.</strong></p>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:1.25rem;">Green = correct &nbsp;·&nbsp; Amber = partially correct or mechanism missing &nbsp;·&nbsp; Red = absent or wrong link</p>
+    <div class="maps-grid">
+
+      <!-- Bob -->
+      <div class="map-card">
+        <div class="map-card-hdr">
+          <div class="av-sm" style="background:var(--green-bg);color:var(--green-p);">BO</div>
+          <div><div class="mtitle">Bob — simulation run</div><div class="msub">Wide but shallow · No mechanisms</div></div>
+        </div>
+        <div class="map-before">
+          <span class="map-before-label">Before instruction — prior state</span>
+          <div class="mb-row">○ CO₂ / CH₄ names known by name</div>
+          <div class="mb-row">✗ No causal links at all</div>
+          <div class="mb-row">✗ Mechanism vocabulary absent</div>
+          <div class="mb-row">⚠ Misconception: "all gases trap heat equally"</div>
+        </div>
+        <span class="map-after-label">After instruction (simulation run)</span>
+        <svg viewBox="0 0 280 185" width="100%" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arBg2" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#1D9E75"/></marker>
+            <marker id="arBa2" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#BA7517"/></marker>
+          </defs>
+          <rect x="10" y="12" width="72" height="26" rx="4" fill="#EAF3DE" stroke="#1D9E75" stroke-width="0.8"/>
+          <text x="46" y="29" font-size="10" fill="#3B6D11" text-anchor="middle" font-family="sans-serif">CO₂ / CH₄</text>
+          <rect x="96" y="12" width="84" height="26" rx="4" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.8"/>
+          <text x="138" y="29" font-size="10" fill="#854F0B" text-anchor="middle" font-family="sans-serif">absorbs infrared</text>
+          <rect x="192" y="12" width="80" height="26" rx="4" fill="#FAEEDA" stroke="#BA7517" stroke-width="1" stroke-dasharray="4,2"/>
+          <text x="232" y="23" font-size="10" fill="#854F0B" text-anchor="middle" font-family="sans-serif">less heat</text>
+          <text x="232" y="35" font-size="10" fill="#BA7517" text-anchor="middle" font-family="sans-serif">escapes ✗</text>
+          <rect x="58" y="82" width="84" height="26" rx="4" fill="#EAF3DE" stroke="#1D9E75" stroke-width="0.8"/>
+          <text x="100" y="99" font-size="10" fill="#3B6D11" text-anchor="middle" font-family="sans-serif">surface temp ↑</text>
+          <rect x="156" y="82" width="70" height="26" rx="4" fill="#FAEEDA" stroke="#BA7517" stroke-width="1" stroke-dasharray="4,2"/>
+          <text x="191" y="93" font-size="10" fill="#854F0B" text-anchor="middle" font-family="sans-serif">ice melts</text>
+          <text x="191" y="105" font-size="10" fill="#BA7517" text-anchor="middle" font-family="sans-serif">✗ missing</text>
+          <rect x="88" y="152" width="94" height="26" rx="4" fill="#FAEEDA" stroke="#BA7517" stroke-width="1" stroke-dasharray="4,2"/>
+          <text x="135" y="163" font-size="10" fill="#854F0B" text-anchor="middle" font-family="sans-serif">more warming</text>
+          <text x="135" y="175" font-size="10" fill="#BA7517" text-anchor="middle" font-family="sans-serif">✗ not linked</text>
+          <line x1="82" y1="25" x2="96" y2="25" stroke="#1D9E75" stroke-width="1.2" marker-end="url(#arBg2)"/>
+          <line x1="138" y1="38" x2="100" y2="82" stroke="#BA7517" stroke-width="1.2" marker-end="url(#arBa2)"/>
+          <text x="106" y="66" font-size="8" fill="#854F0B" font-style="italic" font-family="sans-serif">no label</text>
+          <text x="205" y="62" font-size="9" fill="#E24B4A" font-family="sans-serif">link missing</text>
+        </svg>
+        <p class="map-note">Pairwise links present; mechanism words absent. Intervening nodes skipped. Feedback loop not constructed.</p>
+        <div class="map-compare">
+          <span class="map-compare-ver alt-txt">Text + quiz run — for comparison</span>
+          <div class="mc-row">✓ 2–3 pairwise endpoint links found</div>
+          <div class="mc-row">✗ Ran out of time — only 3 nodes reached</div>
+          <div class="mc-row">✗ No mechanism vocabulary captured at all</div>
+          <div class="mc-score">Text: 35% complete · Transfer 28% &nbsp;|&nbsp; Simulation (above): 62% · Transfer 55%</div>
+        </div>
+      </div>
+
+      <!-- Sally -->
+      <div class="map-card">
+        <div class="map-card-hdr">
+          <div class="av-sm" style="background:var(--rose-bg);color:var(--rose-p);">SL</div>
+          <div><div class="mtitle">Sally — simulation run</div><div class="msub">Sparse · Vocabulary missing</div></div>
+        </div>
+        <div class="map-before">
+          <span class="map-before-label">Before instruction — prior state</span>
+          <div class="mb-row">✗ Zero nodes in map — no prior framework</div>
+          <div class="mb-row">✗ Mechanism vocabulary absent</div>
+          <div class="mb-row">⚠ Vague concept: "greenhouse gases = bad stuff"</div>
+        </div>
+        <span class="map-after-label">After instruction (simulation run)</span>
+        <svg viewBox="0 0 280 155" width="100%" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arSa2" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#BA7517"/></marker>
+          </defs>
+          <rect x="90" y="12" width="100" height="24" rx="4" fill="#F5F5F5" stroke="#9E9E9E" stroke-width="0.7" stroke-dasharray="3,2"/>
+          <text x="140" y="28" font-size="9" fill="#9E9E9E" text-anchor="middle" font-family="sans-serif">greenhouse gases ○</text>
+          <rect x="20" y="65" width="60" height="26" rx="4" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.9" stroke-dasharray="3,2"/>
+          <text x="50" y="82" font-size="10" fill="#854F0B" text-anchor="middle" font-family="sans-serif">CO₂</text>
+          <rect x="170" y="65" width="90" height="26" rx="4" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.9" stroke-dasharray="3,2"/>
+          <text x="215" y="82" font-size="10" fill="#854F0B" text-anchor="middle" font-family="sans-serif">temp change?</text>
+          <line x1="80" y1="78" x2="170" y2="78" stroke="#BA7517" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arSa2)"/>
+          <text x="115" y="70" font-size="9" fill="#BA7517" font-style="italic" font-family="sans-serif">maybe?</text>
+          <rect x="30" y="112" width="220" height="22" rx="4" fill="#FCEBEB" stroke="#E24B4A" stroke-width="0.5"/>
+          <text x="140" y="127" font-size="10" fill="#A32D2D" text-anchor="middle" font-family="sans-serif">graph nearly empty · no mechanism captured</text>
+        </svg>
+        <p class="map-note">Knows gas names as isolated nodes. Cannot connect them into a causal chain. Vocabulary gap blocks mechanism labeling even from simulation.</p>
+        <div class="map-compare">
+          <span class="map-compare-ver alt-txt">Text + quiz run — for comparison</span>
+          <div class="mc-row">✓ CO₂ node, Temp node added — but isolated (no links)</div>
+          <div class="mc-row">✗ No causal links at all</div>
+          <div class="mc-row">✗ No mechanism vocabulary — same block as simulation</div>
+          <div class="mc-score">Text: 28% complete · Transfer 20% &nbsp;|&nbsp; Simulation (above): 35% · Transfer 28%</div>
+        </div>
+      </div>
+
+      <!-- Alfredo -->
+      <div class="map-card">
+        <div class="map-card-hdr">
+          <div class="av-sm" style="background:var(--purple-bg);color:var(--purple-p);">AF</div>
+          <div><div class="mtitle">Alfredo — simulation run</div><div class="msub">Values-driven gap at human causation</div></div>
+        </div>
+        <div class="map-before">
+          <span class="map-before-label">Before instruction — prior state</span>
+          <div class="mb-row">✓ Natural gas cycle — partially known</div>
+          <div class="mb-row">✓ CO₂ → warming accepted (natural process framing)</div>
+          <div class="mb-row">✗ Human emissions → CO₂ — refused (values prior)</div>
+          <div class="mb-row">⚠ "All warming follows God's plan — not human-caused"</div>
+        </div>
+        <span class="map-after-label">After instruction (simulation run)</span>
+        <svg viewBox="0 0 280 140" width="100%" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arAf2" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#1D9E75"/></marker>
+            <marker id="arAfp2" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#534AB7"/></marker>
+          </defs>
+          <rect x="10" y="22" width="76" height="26" rx="4" fill="#EAF3DE" stroke="#1D9E75" stroke-width="0.8"/>
+          <text x="48" y="39" font-size="10" fill="#3B6D11" text-anchor="middle" font-family="sans-serif">natural gas</text>
+          <rect x="100" y="22" width="80" height="26" rx="4" fill="#EAF3DE" stroke="#1D9E75" stroke-width="0.8"/>
+          <text x="140" y="39" font-size="10" fill="#3B6D11" text-anchor="middle" font-family="sans-serif">absorbs infrared</text>
+          <rect x="196" y="55" width="72" height="26" rx="4" fill="#EAF3DE" stroke="#1D9E75" stroke-width="0.8"/>
+          <text x="232" y="72" font-size="10" fill="#3B6D11" text-anchor="middle" font-family="sans-serif">warming</text>
+          <rect x="10" y="88" width="88" height="30" rx="4" fill="#EEEDFE" stroke="#534AB7" stroke-width="1" stroke-dasharray="4,2"/>
+          <text x="54" y="101" font-size="10" fill="#3C3489" text-anchor="middle" font-family="sans-serif">human emissions</text>
+          <text x="54" y="113" font-size="10" fill="#534AB7" text-anchor="middle" font-family="sans-serif">✗ not connected</text>
+          <line x1="86" y1="35" x2="100" y2="35" stroke="#1D9E75" stroke-width="1.2" marker-end="url(#arAf2)"/>
+          <line x1="180" y1="35" x2="214" y2="55" stroke="#1D9E75" stroke-width="1.2" marker-end="url(#arAf2)"/>
+          <line x1="98" y1="103" x2="196" y2="75" stroke="#534AB7" stroke-width="1" stroke-dasharray="4,2" marker-end="url(#arAfp2)"/>
+          <text x="148" y="98" font-size="8" fill="#534AB7" font-style="italic" font-family="sans-serif">refused to draw</text>
+        </svg>
+        <p class="map-note">Natural gas cycle connected correctly. Human emissions node present but isolated — values prior blocks the anthropogenic link even after simulation confirms it.</p>
+        <div class="map-compare">
+          <span class="map-compare-ver alt-txt">Text + quiz run — for comparison</span>
+          <div class="mc-row">✓ Natural gas → warming chain built (same as simulation)</div>
+          <div class="mc-row">✗ Human emissions → CO₂ link refused — identical block in both</div>
+          <div class="mc-row">⚠ Text run slightly higher (48% vs 44%) — neither version breaks the worldview barrier</div>
+          <div class="mc-score">Text: 48% complete · Transfer 30% &nbsp;|&nbsp; Simulation (above): 44% · Transfer 28%</div>
+        </div>
+      </div>
+
+    </div><!-- /maps-grid-2 -->
+  </div>
+
+  <!-- ── TAB 2: SIMULATED RUNS ──────────────────────────── -->
+  <div id="etab-runs" class="etab-panel">
+    <p style="font-size:13px;color:var(--sub);margin-bottom:6px;line-height:1.6;">Predicted behavior for each persona across two instruction versions. Map completeness (%) = how well the synthetic student's map matches the expert map. Transfer score (%) = ability to answer novel multi-step causal questions.</p>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:1.25rem;padding:8px 12px;background:var(--amber-bg);border-radius:6px;border:0.5px solid rgba(180,130,0,0.2);"><strong style="color:var(--amber-p);">Source note:</strong> Bob's predictions (both versions) come directly from the original concept slides (slide 19). Sally and Alfredo's behaviors are inferred from their slide descriptions. All three are hypothetical illustrative profiles.</p>
+    <div class="cmp-wrap">
+    <table class="cmp-table">
+      <thead>
+        <tr>
+          <th style="width:140px">Persona</th>
+          <th>Text + quiz version</th>
+          <th>Interactive simulation version</th>
+          <th>Map quality signals</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><div class="p-mini"><div class="av-sm" style="background:var(--green-bg);color:var(--green-p);">BO</div><div><strong>Bob</strong><br><span style="font-size:11px;color:var(--muted)">Hands-on</span></div></div></td>
+          <td>Scans chapter to answer individual map nodes. Ignores explanatory paragraphs. Runs out of time. Map has a few correct direct links but misses intervening nodes — correct answers for wrong structural reasons. Map coherence 35%, transfer 28%.</td>
+          <td>Systematically varies one input at a time and observes output. Builds many pairwise correct relations. Final map is wide but shallow — no multi-input nodes; mechanism words absent from link labels. Map coherence 62%, transfer 55%.</td>
+          <td><span class="badge-sm b-amber">Partial coverage</span><span class="badge-sm b-red">Missing mechanisms</span><span class="badge-sm b-green">Good directionality</span></td>
+        </tr>
+        <tr>
+          <td><div class="p-mini"><div class="av-sm" style="background:var(--rose-bg);color:var(--rose-p);">SL</div><div><strong>Sally</strong><br><span style="font-size:11px;color:var(--muted)">Late enrollee</span></div></div></td>
+          <td>Reads headings and bold terms. Picks up gas names as isolated nodes. Skips explanatory paragraphs. Map is sparse — surface nodes (CO₂, temperature) with no connecting links. Stops before building any causal structure. Map coherence 28%, transfer 20%.</td>
+          <td>Tries simulation but lacks vocabulary to label observations. Notices variables change together but cannot name the mechanism. A few unconnected nodes. Does not use quiz. Leaves before time is up. Map coherence 35%, transfer 28%.</td>
+          <td><span class="badge-sm b-red">Sparse map</span><span class="badge-sm b-red">No causal structure</span><span class="badge-sm b-amber">Vocabulary missing</span></td>
+        </tr>
+        <tr>
+          <td><div class="p-mini"><div class="av-sm" style="background:var(--purple-bg);color:var(--purple-p);">AF</div><div><strong>Alfredo</strong><br><span style="font-size:11px;color:var(--muted)">Values-filtered</span></div></div></td>
+          <td>Reads full text but filters human-causation claims. Adds gas nodes and temperature nodes but refuses to draw the human-emissions → warming link. Map has a structural gap exactly at anthropogenic forcing. Map coherence 48%, transfer 30%.</td>
+          <td>Engages with simulation, attributes outcomes to natural variation. Connects natural gas cycles correctly but leaves human emissions node isolated — will not draw the link even when simulation confirms it. Map coherence 44%, transfer 28%.</td>
+          <td><span class="badge-sm b-amber">Partial coverage</span><span class="badge-sm b-purple">Gap at human causation</span><span class="badge-sm b-red">Values-driven block</span></td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+    <hr style="border:none;border-top:1.5px solid var(--border);margin:1.75rem 0 1.25rem;">
+    <p class="eyebrow" style="margin-bottom:6px;">Instructional Implications</p>
+    <p style="font-size:13px;color:var(--sub);margin-bottom:1.25rem;line-height:1.6;">What the synthetic runs reveal for instructional design — organized by finding, not by student.</p>
+    <div class="imp-list">
+
+      <div class="imp-item">
+        <span class="imp-bullet">→</span>
+        <span>
+          <span class="imp-theme">No single instruction format is sufficient</span>
+          <strong>Text-only and simulation each produce systematically different gaps.</strong> Text builds some causal structure but misses coverage; simulation adds breadth but loses mechanism precision. The two formats are not interchangeable — they fail in different places.
+          <div class="imp-action-row"><span class="imp-action-lbl do">Teacher action</span>Sequence text AND simulation within the same unit — not as alternatives. Use text to establish mechanism vocabulary and causal chains; use simulation to test and extend pairwise relationships.</div>
+          <div class="imp-action-row"><span class="imp-action-lbl outcome">Learning outcome</span>Students produce maps with both correct multi-step chains <em>and</em> broad coverage — neither format alone achieves both, so neither should be the only format used.</div>
+          <div class="imp-evidence"><span class="imp-evidence-label">Evidence:</span><span class="imp-persona-tag" style="background:var(--green-bg);color:var(--green-p);">Bob</span><span style="font-size:11px;color:var(--muted);">text: 3 endpoint links, no chain · simulation: 4 links, no mechanism labels</span></div>
+        </span>
+      </div>
+
+      <div class="imp-item">
+        <span class="imp-bullet">→</span>
+        <span>
+          <span class="imp-theme">Domain vocabulary is a prerequisite, not a learning outcome</span>
+          <strong>Students cannot build a causal map from content they cannot name.</strong> Observing CO₂ and temperature co-vary in the simulation means nothing without the term "infrared absorption" to anchor why. Good reading skills do not substitute for missing domain vocabulary.
+          <div class="imp-action-row"><span class="imp-action-lbl do">Teacher action</span>Teach mechanism terms — infrared absorption, albedo, radiative forcing — with explicit definitions and concrete examples <em>before</em> introducing causal content that depends on them.</div>
+          <div class="imp-action-row"><span class="imp-action-lbl outcome">Learning outcome</span>Students can label causal links in the map with mechanism words, not just draw unlabeled arrows or note that two variables "go together."</div>
+          <div class="imp-evidence"><span class="imp-evidence-label">Evidence:</span><span class="imp-persona-tag" style="background:#FDF2F8;color:#9D174D;">Sally</span><span style="font-size:11px;color:var(--muted);">near-empty map in both runs · correlation observed but mechanism unnamed</span></div>
+        </span>
+      </div>
+
+      <div class="imp-item">
+        <span class="imp-bullet">→</span>
+        <span>
+          <span class="imp-theme">Standard assessments miss the most important failure modes</span>
+          <strong>Multiple-choice and accuracy scores make structural and values-based gaps invisible.</strong> Alfredo knows the facts — a recall test would not flag his missing human-causation link. Bob's endpoint answers look correct on a quiz, but the causal chain connecting them is absent. The gap is real; the test simply doesn't ask for it.
+          <div class="imp-action-row"><span class="imp-action-lbl do">Teacher action</span>Add causal path trace tasks to assessments: ask students to draw the chain from human emissions to surface temperature, name each intermediate step, and label the mechanism on each link.</div>
+          <div class="imp-action-row"><span class="imp-action-lbl outcome">Learning outcome</span>Assessment captures chain completeness, mechanism labeling, and whether the student has connected anthropogenic causation — not just whether they can recall gas names or pick correct endpoints.</div>
+          <div class="imp-evidence"><span class="imp-evidence-label">Evidence:</span><span class="imp-persona-tag" style="background:var(--purple-bg);color:var(--purple-p);">Alfredo</span><span class="imp-persona-tag" style="background:var(--green-bg);color:var(--green-p);">Bob</span><span style="font-size:11px;color:var(--muted);">both would pass recall test · causal map reveals the gap</span></div>
+        </span>
+      </div>
+
+      <div class="imp-item">
+        <span class="imp-bullet">→</span>
+        <span>
+          <span class="imp-theme">Self-explanation must be explicitly taught as a strategy</span>
+          <strong>No learner naturally pauses to build a causal model unprompted.</strong> Bob scans for quiz answers. Sally reads headings. Alfredo reads carefully but filters for worldview fit. Engagement with content is not the same as constructing a mental model — that construction is a learned skill.
+          <div class="imp-action-row"><span class="imp-action-lbl do">Teacher action</span>Build self-explanation prompts directly into instruction: "What does this step cause, and why?" "What is the mechanism between X and Y?" Model a completed causal chain before asking students to build their own.</div>
+          <div class="imp-action-row"><span class="imp-action-lbl outcome">Learning outcome</span>Students internalize the habit of connecting nodes with mechanism labels during learning — not just after, as a review task — so the causal map reflects genuine understanding, not post-hoc recall.</div>
+          <div class="imp-evidence"><span class="imp-evidence-label">Evidence:</span><span class="imp-persona-tag" style="background:var(--green-bg);color:var(--green-p);">Bob</span><span class="imp-persona-tag" style="background:#FDF2F8;color:#9D174D;">Sally</span><span class="imp-persona-tag" style="background:var(--purple-bg);color:var(--purple-p);">Alfredo</span><span style="font-size:11px;color:var(--muted);">all three show no spontaneous self-explanation in either instruction version</span></div>
+        </span>
+      </div>
+
+    </div>
+
+  </div>
+
+</div><!-- /wrap -->
+</div><!-- /explorer-section -->
+
+<!-- ═══════════════════ FOOTER ═══════════════════════════════ -->
+<footer>
+  <p><strong>BettyBrain</strong> — Synthetic Learner System &nbsp;·&nbsp; Betty's Brain teachable-agent framework &nbsp;·&nbsp; <a href="https://github.com/xd2164/bettyBrain">github.com/xd2164/bettyBrain</a></p>
+  <p style="margin-top:8px;opacity:0.45;font-size:0.78rem;">Domain: greenhouse gases &amp; global temperature · Personas from slides: Bob, Sally, Alfredo</p>
+</footer>
+
+<script>
+/* ── PERSONA DATA ─────────────────────────────────────────── */
+const personas = {
+  bob:{
+    name:'Bob',initials:'BO',avBg:'var(--green-bg)',avColor:'var(--green-p)',
+    tag:'Diligent · persistent · non-reader',tagBg:'var(--green-bg)',tagColor:'var(--green-p)',
+    prior:'Loves science — particularly hands-on activities where he can see one thing change another. Loves trying things and getting feedback. But does not like to read.',
+    misconception:'Misses intervening causal links — gets correct endpoints for the wrong structural reason (skips the "why" between cause and effect)',
+    strategy:'Looks at questions in the back of the book first; skims text to find specific answers to those questions; will persist through tasks and loves simulation feedback',
+    goalOrientation:'Task completion · Ego-protection: Low · Persistence: High',
+    textMapDesc:'3 pairwise endpoint links (CO₂→Temp, Methane→Temp, + one more). Correct directions — but intervening nodes (infrared absorption, albedo) never added. No mechanism label on any link.',
+    simMapDesc:'4 correct pairwise links across all gas variables — map is wide but shallow. Multi-step causal chains and mechanism vocabulary missing. Ice/albedo feedback loop skipped entirely.',
+    textTrace:[
+      ['Opens text','JUMPS to end-of-chapter questions first','identifies "what to look for"'],
+      ['"What causes temperature to rise?"','Scans chapter for direct answer','+CO₂→Temp (no chain · no mechanism)'],
+      ['Mechanism paragraphs (infrared · albedo)','SKIPS — not directly answering a question','infrared · albedo nodes never added'],
+      ['More chapter questions','Keeps scanning — time running low','2 more pairwise endpoint links added'],
+      ['Runs out of time — no quiz','Did not reach quiz section','3 pairwise links · no chain · no mechanism'],
+    ],
+    simTrace:[
+      ['Opens simulation · varies CO₂ ↑','Observes temp ↑','+CO₂→Temp (pairwise observation)'],
+      ['Varies methane ↑','Same test strategy — excited by feedback','+Methane→Temp (pairwise · no label)'],
+      ['Looks for "ice" or "albedo" variable','Not prominently labeled — skips over it','ice/albedo feedback loop missed'],
+      ['Tests remaining sliders systematically','Surface-level but thorough coverage','4 correct pairwise links total'],
+      ['Stops at 70% — "tested all the sliders"','Declares done','map wide but shallow · no causal chain'],
+    ],
+    textMap:35,simMap:62,textTransfer:28,simTransfer:55
+  },
+  sally:{
+    name:'Sally',initials:'SL',avBg:'var(--rose-bg)',avColor:'var(--rose-p)',
+    tag:'Good reader · science-averse · late enrollee',tagBg:'var(--rose-bg)',tagColor:'var(--rose-p)',
+    prior:'Good general reader — but dislikes science and skims science readings without checking understanding. Enrolled late and missed the lessons on causal dependencies.',
+    misconception:'No causal framework at all — not a specific misconception, but a structural gap from missing the foundational causal reasoning lessons',
+    strategy:'Applies good reading skills shallowly to science content — skims for surface terms, does not connect new info to prior knowledge, does not check understanding',
+    goalOrientation:'Completion (minimal for science) · Ego-protection: Medium',
+    textMapDesc:'2 disconnected nodes only (CO₂ and Temp added as isolated facts). No link between them, no mechanism vocabulary. Graph nearly empty — the causal structure was in plain sight but never connected.',
+    simMapDesc:'1 uncertain CO₂⇢Temp link, labeled "maybe?" — mechanism unnamed. Correlation was visible in the simulation but vocabulary gap blocks any further labeling. Map nearly empty.',
+    textTrace:[
+      ['Opens chapter','Reads section headings only','no map change'],
+      ['"Greenhouse Gas" heading','Reads heading · SKIPS body paragraph','+vague "greenhouse gases" node (unlabeled)'],
+      ['"CO₂" in bold text','Adds CO₂ as isolated node','+CO₂ (no links · no mechanism)'],
+      ['"Temperature Change" subheading','Adds Temp as isolated node','+Temp (disconnected from CO₂)'],
+      ['Mechanism paragraphs (infrared · albedo)','SKIPS — no vocabulary anchor to grab onto','infrared · albedo never encountered'],
+      ['Stops early — no quiz attempt','Not enough confidence to attempt quiz','graph: 2 disconnected nodes only'],
+    ],
+    simTrace:[
+      ['Opens simulation — tries CO₂ slider','Observes temp change','CO₂⇢Temp correlation noticed — no vocabulary to label'],
+      ['Aware CO₂ and temp move together','Adds uncertain link ("maybe?")','unlabeled CO₂⇢Temp link added'],
+      ['Cannot name the mechanism','Vocabulary gap blocks further labeling','no chain · no mechanism labels'],
+      ['Leaves before time is up','No quiz attempt','map nearly empty — 1 unlabeled link'],
+    ],
+    textMap:28,simMap:35,textTransfer:20,simTransfer:28
+  },
+  alfredo:{
+    name:'Alfredo',initials:'AF',avBg:'var(--purple-bg)',avColor:'var(--purple-p)',
+    tag:'Values-filtered',tagBg:'var(--purple-bg)',tagColor:'var(--purple-p)',
+    prior:'Moderate — knows gas names, aware of climate debate. His father is a brimstone preacher who proclaims nightly: "God has a plan for the earth, and humans do not have the power to change that plan by their actions."',
+    misconception:'Human actions cannot affect climate outcomes — not a factual confusion but a values-based prior instilled by family worldview',
+    strategy:'Reads carefully and engages with content — but cognitively filters any claim that asserts human causation; selectively adds only "natural" causal nodes',
+    goalOrientation:'Values preservation · Ego-protection: High (value-driven, not ego-driven)',
+    textMapDesc:'Natural gas cycle correctly built (CO₂ → infrared → warming). Human Activities node added but isolated — no link drawn to CO₂. Map looks nearly complete; the values-based gap is silent and invisible unless you check.',
+    simMapDesc:'Same gap as text run — natural cycle connected, Human Activities node still isolated. Simulation evidence seen repeatedly and attributed to "natural variation." Neither instruction version breaks the values prior.',
+    textTrace:[
+      ['Opens text','Reads carefully — engaged reader — good start','no map change initially'],
+      ['"CO₂ is a greenhouse gas"','ATTENDS — no worldview conflict','+CO₂ node · +greenhouse gas node'],
+      ['"CO₂ → infrared trapped → warming"','ATTENDS — natural process, acceptable','+CO₂→Temp link (natural cycle framing)'],
+      ['"Human fossil fuels release CO₂"','Reads but DOES NOT ADD — worldview block','"Humans don\'t cause this" — link refused'],
+      ['"Human activity is the primary driver"','ATTENDS but rejects as causal claim','+Human Activities node added · ISOLATED'],
+      ['Map review','Satisfied with natural-cycle graph','✗ Human Activities → CO₂ link absent'],
+    ],
+    simTrace:[
+      ['Opens simulation — engages systematically','Tests each variable in order',''],
+      ['"Natural gas cycle" variable → temp rises','ATTENDS — natural process acceptable','+Natural gas → warming (correct)'],
+      ['"Human emissions" slider → temp rises clearly','Sees result · ATTRIBUTES to natural variation','"Earth warms anyway — God\'s plan"'],
+      ['Simulation confirms human link repeatedly','Still REFUSES to draw the causal link','human emissions node remains isolated ⚠'],
+      ['Map review — complete for natural cycle','Structural gap at anthropogenic forcing only','human emissions disconnected throughout'],
+    ],
+    textMap:48,simMap:44,textTransfer:30,simTransfer:28
+  }
+};
+
+function bar(val, color) {
+  return `<div class="bar-bg"><div class="bar-fill-anim" data-w="${val}" style="background:${color};"></div></div>`;
+}
+
+function renderTrace(steps) {
+  return steps.map((s, i) => {
+    const act = s[1];
+    let cls = '';
+    if (/SKIP|REFUSES?|DOES NOT ADD|BLOCKS?|FILTERS?|ATTRIBUTES/i.test(act)) cls = 'ts-skip';
+    else if (/ATTENDS|^\+|connects|captures/i.test(act)) cls = 'ts-add';
+    else if (/Stops|Runs out|Abandons|Disengages|Leaves/i.test(act)) cls = 'ts-stop';
+    return `<div class="trace-step ${cls}">
+      <span class="ts-n">${i+1}</span>
+      <span class="ts-txt"><span class="ts-trigger">${s[0]}</span> &nbsp;→&nbsp; ${s[1]}</span>
+      <span class="ts-map">${s[2]}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderDetail(id) {
+  const p = personas[id];
+  const colHdr = `<div style="display:grid;grid-template-columns:16px 1fr 128px;gap:6px;padding:3px 0 5px;border-bottom:0.5px solid rgba(0,0,0,0.12);margin-bottom:3px;">
+    <span style="font-size:9px;color:var(--muted);text-align:center;">#</span>
+    <span style="font-size:9px;color:var(--muted);">Trigger &rarr; Agent action</span>
+    <span style="font-size:9px;color:var(--muted);text-align:right;">Map change</span>
+  </div>`;
+  return `
+    <div class="detail-hdr">
+      <div class="pav" style="width:40px;height:40px;background:${p.avBg};color:${p.avColor};border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;flex-shrink:0;">${p.initials}</div>
+      <div>
+        <div class="detail-title">${p.name}</div>
+        <div class="detail-sub">${p.tag}</div>
+      </div>
+    </div>
+    <div class="attrs">
+      <div class="attr-box"><div class="attr-label">Prior knowledge</div><div class="attr-value">${p.prior}</div></div>
+      <div class="attr-box"><div class="attr-label">Core misconception</div><div class="attr-value">${p.misconception}</div></div>
+      <div class="attr-box"><div class="attr-label">Learning strategy</div><div class="attr-value">${p.strategy}</div></div>
+      <div class="attr-box"><div class="attr-label">Goal orientation</div><div class="attr-value">${p.goalOrientation}</div></div>
+    </div>
+    <div class="scenario-label" style="margin-top:1rem;">
+      <span style="color:#378ADD;font-weight:700;">Text + quiz run</span>
+      <span style="font-weight:400;color:var(--muted);"> — agent reads the chapter sentence-by-sentence and builds the map from language</span>
+    </div>
+    <div class="scen-block txt">${colHdr}${renderTrace(p.textTrace)}</div>
+    <div class="scenario-label">
+      <span style="color:#1D9E75;font-weight:700;">Simulation run</span>
+      <span style="font-weight:400;color:var(--muted);"> — agent varies sliders, observes co-variation, and infers causal links from what it sees</span>
+    </div>
+    <div class="scen-block sim">${colHdr}${renderTrace(p.simTrace)}</div>
+    <div class="outcmp-panel">
+      <div class="outcmp-title">What the map looks like after each run &mdash; see Causal Maps tab for the visual</div>
+      <div class="outcmp-metric">
+        <div class="outcmp-mlabel" style="color:#378ADD;">After text + quiz run</div>
+        <div style="font-size:12px;color:var(--sub);line-height:1.6;margin-bottom:5px;">${p.textMapDesc}</div>
+        <div style="font-size:10px;color:var(--muted);">Map completeness: <strong>${p.textMap}%</strong> of expert map &nbsp;·&nbsp; Transfer: <strong>${p.textTransfer}%</strong></div>
+      </div>
+      <div class="outcmp-metric">
+        <div class="outcmp-mlabel" style="color:#1D9E75;">After simulation run</div>
+        <div style="font-size:12px;color:var(--sub);line-height:1.6;margin-bottom:5px;">${p.simMapDesc}</div>
+        <div style="font-size:10px;color:var(--muted);">Map completeness: <strong>${p.simMap}%</strong> of expert map &nbsp;·&nbsp; Transfer: <strong>${p.simTransfer}%</strong></div>
+      </div>
+    </div>
+  `;
+}
+
+function animateBars() {
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      document.querySelectorAll('.bar-fill-anim').forEach(b => {
+        b.style.width = (b.dataset.w || 0) + '%';
+      });
+    }, 60);
+  });
+}
+
+function selectP(id, el) {
+  document.querySelectorAll('.pgal-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('persona-detail').innerHTML = renderDetail(id);
+  animateBars();
+}
+
+function showArch(view) {
+  const ov = document.getElementById('arch-overview');
+  const st = document.getElementById('arch-steps');
+  const bOv = document.getElementById('arch-btn-overview');
+  const bSt = document.getElementById('arch-btn-steps');
+  if (view === 'overview') {
+    ov.style.display = ''; st.style.display = 'none';
+    bOv.style.background = 'var(--teal)'; bOv.style.color = 'white'; bOv.style.borderColor = 'var(--teal)';
+    bSt.style.background = 'transparent'; bSt.style.color = 'var(--sub)'; bSt.style.borderColor = 'var(--border-strong)';
+  } else {
+    ov.style.display = 'none'; st.style.display = '';
+    bSt.style.background = 'var(--teal)'; bSt.style.color = 'white'; bSt.style.borderColor = 'var(--teal)';
+    bOv.style.background = 'transparent'; bOv.style.color = 'var(--sub)'; bOv.style.borderColor = 'var(--border-strong)';
+  }
+}
+
+function showETab(tab, btn) {
+  document.querySelectorAll('.etab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.etab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('etab-' + tab).classList.add('active');
+}
+
+/* ── SCROLL FADE-IN ───────────────────────────────────────── */
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+}, { threshold: 0.07 });
+document.querySelectorAll('.fade-up').forEach(el => obs.observe(el));
+
+/* ── INIT ─────────────────────────────────────────────────── */
+document.getElementById('persona-detail').innerHTML = renderDetail('bob');
+animateBars();
+</script>
+</body>
+</html>
